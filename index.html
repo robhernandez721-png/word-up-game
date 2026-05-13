@@ -663,14 +663,35 @@ async function loadWord() {
       if (!res.ok) { attempts++; continue; }
       const data = await res.json();
       const entry = data[0];
-      const meaning = entry.meanings[0];
-      const def = meaning?.definitions[0]?.definition;
-      if (!def) { attempts++; continue; }
+
+      // Search all meanings and definitions for the best one:
+      // must not contain the word (or its root), must be at least 20 chars
+      const wordRoot = word.toLowerCase().replace(/(ing|ed|ly|tion|ness|ment|ful|less|er|est)$/, "");
+      let bestDef = null;
+      let bestPos = null;
+
+      for (const meaning of entry.meanings) {
+        for (const d of meaning.definitions) {
+          if (!d.definition) continue;
+          const defLower = d.definition.toLowerCase();
+          // Skip if definition gives away the word
+          if (defLower.includes(word.toLowerCase())) continue;
+          if (wordRoot.length > 3 && defLower.includes(wordRoot)) continue;
+          // Skip very short or stub definitions
+          if (d.definition.length < 20) continue;
+          bestDef = d.definition;
+          bestPos = meaning.partOfSpeech;
+          break;
+        }
+        if (bestDef) break;
+      }
+
+      if (!bestDef) { attempts++; continue; }
 
       currentWord = entry.word;
       usedWords.add(word);
-      document.getElementById("posTag").textContent = meaning.partOfSpeech;
-      document.getElementById("definitionText").textContent = def;
+      document.getElementById("posTag").textContent = bestPos;
+      document.getElementById("definitionText").textContent = bestDef;
       document.getElementById("actualWord").textContent = currentWord.toUpperCase();
 
       roundCount++;
