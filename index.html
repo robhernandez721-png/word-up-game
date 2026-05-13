@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Word Up!</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #0f0f1a;
+    color: #f0f0f0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+
+  h1 {
+    font-size: 2.4rem;
+    font-weight: 800;
+    color: #a78bfa;
+    margin-bottom: 6px;
+    letter-spacing: -1px;
+  }
+
+  .subtitle {
+    color: #888;
+    font-size: 0.9rem;
+    margin-bottom: 30px;
+  }
+
+  .screen { width: 100%; max-width: 480px; }
+
+  /* SETUP SCREEN */
+  .setup-card {
+    background: #1a1a2e;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  .setup-card h2 {
+    font-size: 1rem;
+    color: #a78bfa;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  input[type="text"], input[type="number"] {
+    flex: 1;
+    background: #0f0f1a;
+    border: 2px solid #2d2d4e;
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: #f0f0f0;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input:focus { border-color: #a78bfa; }
+
+  .btn {
+    background: #a78bfa;
+    color: #0f0f1a;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+
+  .btn:active { transform: scale(0.96); }
+  .btn:hover { background: #c4b5fd; }
+
+  .btn-outline {
+    background: transparent;
+    color: #a78bfa;
+    border: 2px solid #a78bfa;
+  }
+
+  .btn-outline:hover { background: #a78bfa22; }
+
+  .btn-danger {
+    background: transparent;
+    color: #f87171;
+    border: 2px solid #f87171;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+
+  .btn-danger:hover { background: #f8717122; }
+
+  .btn-big {
+    width: 100%;
+    padding: 16px;
+    font-size: 1.1rem;
+    border-radius: 14px;
+    margin-top: 8px;
+  }
+
+  .player-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .player-chip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #0f0f1a;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.95rem;
+  }
+
+  .score-config {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .score-config label { color: #ccc; font-size: 0.95rem; }
+  .score-config input { width: 80px; flex: none; }
+
+  /* DIFFICULTY SELECTOR */
+  .diff-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .diff-btn {
+    flex: 1;
+    padding: 10px 6px;
+    border-radius: 10px;
+    border: 2px solid #2d2d4e;
+    background: #0f0f1a;
+    color: #888;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+
+  .diff-btn:hover { border-color: #a78bfa55; color: #ccc; }
+  .diff-btn.active-easy   { border-color: #34d399; color: #34d399; background: #34d39911; }
+  .diff-btn.active-medium { border-color: #a78bfa; color: #a78bfa; background: #a78bfa11; }
+  .diff-btn.active-hard   { border-color: #f87171; color: #f87171; background: #f8717111; }
+
+  .diff-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 400;
+    margin-top: 3px;
+    opacity: 0.7;
+  }
+
+  /* GAME SCREEN */
+  .round-badge {
+    background: #1a1a2e;
+    border-radius: 30px;
+    padding: 6px 16px;
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .diff-indicator {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .diff-indicator.easy   { background: #34d39922; color: #34d399; }
+  .diff-indicator.medium { background: #a78bfa22; color: #a78bfa; }
+  .diff-indicator.hard   { background: #f8717122; color: #f87171; }
+
+  .definition-card {
+    background: #1a1a2e;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .pos-tag {
+    font-size: 0.75rem;
+    color: #a78bfa;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+
+  .definition-text {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: #ddd;
+    flex: 1;
+  }
+
+  .word-reveal {
+    text-align: center;
+    padding: 16px;
+    border-radius: 12px;
+    background: #0f0f1a;
+    border: 2px dashed #2d2d4e;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .word-reveal:hover { border-color: #a78bfa; }
+
+  .word-reveal .tap-hint { color: #555; font-size: 0.85rem; }
+
+  .word-reveal .actual-word {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #a78bfa;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* PLAYERS SCORING */
+  .players-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .player-score-row {
+    background: #1a1a2e;
+    border-radius: 14px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .player-score-row:hover { border-color: #a78bfa44; }
+  .player-score-row:active { transform: scale(0.97); border-color: #a78bfa; }
+
+  .player-name-col { font-size: 1rem; font-weight: 600; }
+
+  .score-col {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .score-num {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #a78bfa;
+    min-width: 32px;
+    text-align: right;
+  }
+
+  .plus-btn {
+    background: #a78bfa;
+    color: #0f0f1a;
+    border: none;
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    font-size: 1.3rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.1s;
+  }
+
+  .plus-btn:hover { background: #c4b5fd; }
+
+  .minus-btn {
+    background: #2d2d4e;
+    color: #888;
+    border: none;
+    border-radius: 8px;
+    width: 28px;
+    height: 28px;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.1s;
+  }
+
+  .minus-btn:hover { background: #3d3d5e; color: #ccc; }
+
+  .action-row {
+    display: flex;
+    gap: 10px;
+  }
+
+  .action-row .btn { flex: 1; }
+
+  .progress-bar-wrap {
+    background: #1a1a2e;
+    border-radius: 8px;
+    height: 6px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #a78bfa, #818cf8);
+    border-radius: 8px;
+    transition: width 0.4s ease;
+  }
+
+  /* WIN SCREEN */
+  .win-screen { text-align: center; padding: 20px 0; }
+
+  .trophy { font-size: 5rem; margin-bottom: 16px; }
+
+  .win-name {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #fbbf24;
+    margin-bottom: 8px;
+  }
+
+  .win-sub { color: #888; margin-bottom: 30px; }
+
+  .final-scores {
+    background: #1a1a2e;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+    text-align: left;
+  }
+
+  .final-score-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #2d2d4e;
+    font-size: 1rem;
+  }
+
+  .final-score-row:last-child { border-bottom: none; }
+  .final-score-row .fscore { font-weight: 700; color: #a78bfa; }
+
+  /* CONFETTI */
+  .confetti-piece {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    top: -10px;
+    animation: fall linear forwards;
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  @keyframes fall {
+    to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 400px) {
+    h1 { font-size: 1.8rem; }
+    .definition-text { font-size: 0.95rem; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Word Up!</h1>
+<p class="subtitle">Read the definition. Guess the word. Win.</p>
+
+<!-- SETUP SCREEN -->
+<div class="screen" id="setupScreen">
+  <div class="setup-card">
+    <h2>Players</h2>
+    <div class="input-row">
+      <input type="text" id="playerInput" placeholder="Enter player name" maxlength="20" />
+      <button class="btn" onclick="addPlayer()">Add</button>
+    </div>
+    <div class="player-list" id="playerList"></div>
+  </div>
+
+  <div class="setup-card">
+    <h2>Difficulty</h2>
+    <div class="diff-row">
+      <button class="diff-btn active-easy" id="diff-easy" onclick="setDifficulty('easy')">
+        Easy
+        <span class="diff-label">Common words</span>
+      </button>
+      <button class="diff-btn" id="diff-medium" onclick="setDifficulty('medium')">
+        Medium
+        <span class="diff-label">Makes you think</span>
+      </button>
+      <button class="diff-btn" id="diff-hard" onclick="setDifficulty('hard')">
+        Hard
+        <span class="diff-label">Vocabulary test</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="setup-card">
+    <h2>Win Condition</h2>
+    <div class="score-config">
+      <label>First to</label>
+      <input type="number" id="targetScore" value="10" min="1" max="100" />
+      <label>points wins</label>
+    </div>
+  </div>
+
+  <button class="btn btn-big" onclick="startGame()">Start Game</button>
+</div>
+
+<!-- GAME SCREEN -->
+<div class="screen hidden" id="gameScreen">
+  <div class="round-badge" id="roundBadge">Round 1</div>
+
+  <div class="progress-bar-wrap">
+    <div class="progress-bar" id="progressBar" style="width:0%"></div>
+  </div>
+
+  <div class="definition-card">
+    <div>
+      <div class="pos-tag" id="posTag"></div>
+      <div class="definition-text" id="definitionText">Loading word...</div>
+    </div>
+    <div class="word-reveal" id="wordReveal" onclick="toggleReveal()">
+      <div class="tap-hint" id="revealHint">Tap to reveal the word</div>
+      <div class="actual-word hidden" id="actualWord"></div>
+    </div>
+  </div>
+
+  <div class="players-grid" id="playersGrid"></div>
+
+  <div class="action-row">
+    <button class="btn btn-outline" onclick="nextWord()">Next Word</button>
+    <button class="btn btn-danger btn-outline" onclick="endGame()">End Game</button>
+  </div>
+</div>
+
+<!-- WIN SCREEN -->
+<div class="screen hidden" id="winScreen">
+  <div class="win-screen">
+    <div class="trophy">🏆</div>
+    <div class="win-name" id="winnerName"></div>
+    <div class="win-sub" id="winSub"></div>
+    <div class="final-scores" id="finalScores"></div>
+    <button class="btn btn-big" onclick="resetToSetup()">Play Again</button>
+  </div>
+</div>
+
+<script>
+// ─── Word lists by difficulty ──────────────────────────────────────────────
+const WORD_LISTS = {
+  easy: [
+    "anger","brave","calm","chase","clean","clever","cold","cruel","curious",
+    "danger","dark","defeat","eager","fair","false","fame","fancy","fast",
+    "fierce","fond","foolish","force","gentle","glad","gloomy","greedy",
+    "grieve","harsh","honest","honor","hope","humble","ignore","jealous",
+    "joyful","judge","kind","lazy","loud","loyal","lucky","mean","moody",
+    "nervous","noisy","odd","patient","peaceful","polite","poor","proud",
+    "punish","quiet","reckless","rescue","reward","rude","safe","selfish",
+    "shame","shy","silly","sincere","smart","sneaky","sorry","stubborn",
+    "stupid","suffer","suspect","tender","thankful","timid","tired","trust",
+    "truthful","unfair","upset","vain","warn","weak","weird","wise","worried",
+    "wrong","brag","boast","coward","clumsy","annoy","forgive","taunt",
+    "wander","linger","gather","scold","startle","panic","dread","envy",
+    "mock","blurt","avoid","ignore","stare","mumble","shiver","frown",
+    "admire","argue","tease","trick","praise","rescue","bully","whisper"
+  ],
+
+  medium: [
+    "abhor","absurd","acumen","adroit","adversary","affable","aloof","ambiguous",
+    "amiable","appease","ardent","arduous","articulate","astute","atone",
+    "audacious","austere","avert","avid","banter","belittle","benevolent",
+    "bias","blatant","blunder","boisterous","brazen","brevity","candid",
+    "capricious","caustic","chronic","clamor","coerce","coherent","composure",
+    "concede","concise","condescend","confound","contempt","contrite","cunning",
+    "debacle","deceit","decipher","decisive","deduce","defiant","delude",
+    "demeanor","depict","desolate","devious","diligent","discern","discord",
+    "disdain","dispel","docile","dubious","eccentric","elaborate","eloquent",
+    "elusive","empower","enigma","erratic","evade","fathom","feign","fervent",
+    "fickle","flippant","flourish","foil","forfeit","formidable","furtive",
+    "futile","gloat","gratitude","grudge","guile","hamper","haughty","haven",
+    "hinder","hostile","impede","imposing","impulsive","inept","infamous",
+    "insolent","intrigue","jeopardize","lament","listless","loathe","lucid",
+    "lure","malice","meager","menace","meticulous","mischief","mitigate",
+    "mundane","nonchalant","obstinate","ominous","oppressive","pacify",
+    "pensive","perceive","persevere","plausible","ponder","pretense","prevail",
+    "provoke","prudent","pursue","reckless","relentless","reluctant","remorse",
+    "resilient","restrain","retaliate","revere","rigid","ruthless","sarcasm",
+    "scrutinize","shrewd","skeptical","slander","smug","solemn","somber",
+    "squander","steadfast","stoic","strive","subtle","sullen","tactful",
+    "tenacious","torment","trivial","turbulent","unyielding","vanquish",
+    "verbose","vigilant","vindictive","volatile","wary","wistful","zealous"
+  ],
+
+  hard: [
+    "abstemious","accolade","acrimony","adamant","admonish","alleviate",
+    "altercation","ambivalent","annihilate","antagonize","appall","apprehend",
+    "arbitrary","archaic","ardor","assiduous","atrocious","baffle","bamboozle",
+    "belabor","bemoan","berate","bolster","bravado","buffoon","cajole",
+    "callous","capitulate","captivate","charade","charlatan","chastise",
+    "circumvent","clandestine","clemency","colossal","combative","commend",
+    "complacent","conceit","confiscate","conspire","contemplate","contradict",
+    "contrition","convoluted","cordial","covert","culminate","cynical","daunt",
+    "decorum","defame","deflect","deliberate","denounce","deprive","deride",
+    "despondent","deter","devastate","devout","diminish","discreet","dismay",
+    "disobey","dominate","earnest","efface","egotistical","embellish","emulate",
+    "eradicate","escalate","esteem","evoke","exemplary","fabricate","falter",
+    "ferocious","fervor","fiend","flatter","flaunt","frugal","grapple",
+    "grovel","guise","harrowing","humiliate","hypocrite","idealize","implore",
+    "impudent","incite","indignant","indulge","infer","infuriate","instigate",
+    "intimidate","irate","jubilant","justify","kindle","knack","languid",
+    "latent","laudable","legitimate","lethargic","liable","lofty","looming",
+    "mangle","manipulate","meander","meddle","menial","misconduct","mislead",
+    "morose","muster","notorious","nullify","oblivious","obtuse","ostracize",
+    "outrage","overwhelm","persecute","pessimist","placate","pompous",
+    "presumptuous","probe","profane","prolong","quarrel","quench","rampage",
+    "rankle","ravage","rebuke","recant","recoil","redeem","refute","reinforce",
+    "renounce","repent","reprimand","resentment","revoke","rile","sabotage",
+    "scoff","scorn","seclude","seethe","sever","shun","sinister","spiteful",
+    "stagnate","stifle","strife","stupefy","subdue","suppress","swagger",
+    "swindle","terminate","thwart","transgress","treacherous","turmoil",
+    "undermine","unravel","usurp","valiant","vengeance","vex","vilify",
+    "vulnerable","waver","weary","wrath","yearn","abscess","acrimony",
+    "assail","banal","clamor","disputatious","fallacious","imperious",
+    "impetuous","incongruous","laconic","magnanimous","mendacious","obsequious",
+    "parsimonious","perfidious","precipitous","querulous","recalcitrant",
+    "sycophant","truculent","vociferous"
+  ]
+};
+
+// ─── State ─────────────────────────────────────────────────────────────────
+let players = [];
+let scores = {};
+let targetScore = 10;
+let difficulty = "easy";
+let roundCount = 0;
+let wordRevealed = false;
+let currentWord = "";
+let usedWords = new Set();
+
+// ─── Difficulty selector ───────────────────────────────────────────────────
+function setDifficulty(level) {
+  difficulty = level;
+  ["easy","medium","hard"].forEach(d => {
+    const btn = document.getElementById("diff-" + d);
+    btn.className = "diff-btn" + (d === level ? " active-" + d : "");
+  });
+}
+
+// ─── Setup ─────────────────────────────────────────────────────────────────
+document.getElementById("playerInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") addPlayer();
+});
+
+function addPlayer() {
+  const input = document.getElementById("playerInput");
+  const name = input.value.trim();
+  if (!name) return;
+  if (players.includes(name)) { input.value = ""; return; }
+  players.push(name);
+  scores[name] = 0;
+  input.value = "";
+  renderPlayerList();
+}
+
+function removePlayer(name) {
+  players = players.filter(p => p !== name);
+  delete scores[name];
+  renderPlayerList();
+}
+
+function renderPlayerList() {
+  const list = document.getElementById("playerList");
+  list.innerHTML = players.map(p => `
+    <div class="player-chip">
+      <span>${p}</span>
+      <button class="btn btn-danger" onclick="removePlayer('${p}')">Remove</button>
+    </div>
+  `).join("");
+}
+
+function startGame() {
+  if (players.length < 2) {
+    alert("Add at least 2 players to start!");
+    return;
+  }
+  const t = parseInt(document.getElementById("targetScore").value);
+  if (!t || t < 1) { alert("Set a valid winning score."); return; }
+  targetScore = t;
+  players.forEach(p => scores[p] = 0);
+  roundCount = 0;
+  usedWords.clear();
+
+  show("gameScreen");
+  hide("setupScreen");
+
+  const badge = document.getElementById("roundBadge");
+  const diffLabel = { easy: "Easy", medium: "Medium", hard: "Hard" }[difficulty];
+  const diffClass = difficulty;
+  badge.innerHTML = `Round 1 <span class="diff-indicator ${diffClass}">${diffLabel}</span>`;
+
+  renderScoreGrid();
+  loadWord();
+}
+
+// ─── Game ──────────────────────────────────────────────────────────────────
+async function loadWord() {
+  wordRevealed = false;
+  document.getElementById("revealHint").classList.remove("hidden");
+  document.getElementById("actualWord").classList.add("hidden");
+  document.getElementById("definitionText").textContent = "Loading...";
+  document.getElementById("posTag").textContent = "";
+  document.getElementById("wordReveal").style.borderColor = "";
+
+  const pool = WORD_LISTS[difficulty];
+  const available = pool.filter(w => !usedWords.has(w));
+  if (available.length === 0) usedWords.clear();
+
+  const candidates = available.length > 0 ? available : pool;
+  let attempts = 0;
+
+  while (attempts < 15) {
+    const word = candidates[Math.floor(Math.random() * candidates.length)];
+    try {
+      const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+      if (!res.ok) { attempts++; continue; }
+      const data = await res.json();
+      const entry = data[0];
+      const meaning = entry.meanings[0];
+      const def = meaning?.definitions[0]?.definition;
+      if (!def) { attempts++; continue; }
+
+      currentWord = entry.word;
+      usedWords.add(word);
+      document.getElementById("posTag").textContent = meaning.partOfSpeech;
+      document.getElementById("definitionText").textContent = def;
+      document.getElementById("actualWord").textContent = currentWord.toUpperCase();
+
+      roundCount++;
+      const diffLabel = { easy: "Easy", medium: "Medium", hard: "Hard" }[difficulty];
+      document.getElementById("roundBadge").innerHTML =
+        `Round ${roundCount} <span class="diff-indicator ${difficulty}">${diffLabel}</span>`;
+      return;
+    } catch {
+      attempts++;
+    }
+  }
+  document.getElementById("definitionText").textContent = "Couldn't load a word. Tap 'Next Word' to try again.";
+}
+
+function toggleReveal() {
+  if (!currentWord) return;
+  wordRevealed = !wordRevealed;
+  document.getElementById("revealHint").classList.toggle("hidden", wordRevealed);
+  document.getElementById("actualWord").classList.toggle("hidden", !wordRevealed);
+  document.getElementById("wordReveal").style.borderColor = wordRevealed ? "#a78bfa" : "";
+}
+
+function nextWord() { loadWord(); }
+
+function addPoint(name) {
+  scores[name]++;
+  renderScoreGrid();
+  updateProgress();
+  if (scores[name] >= targetScore) showWinner(name);
+}
+
+function removePoint(name) {
+  if (scores[name] > 0) scores[name]--;
+  renderScoreGrid();
+  updateProgress();
+}
+
+function updateProgress() {
+  const max = Math.max(...players.map(p => scores[p]));
+  const pct = Math.min((max / targetScore) * 100, 100);
+  document.getElementById("progressBar").style.width = pct + "%";
+}
+
+function renderScoreGrid() {
+  const sorted = [...players].sort((a, b) => scores[b] - scores[a]);
+  const grid = document.getElementById("playersGrid");
+  grid.innerHTML = sorted.map(p => `
+    <div class="player-score-row" onclick="addPoint('${p}')">
+      <div class="player-name-col">${p}</div>
+      <div class="score-col">
+        <button class="minus-btn" onclick="event.stopPropagation(); removePoint('${p}')">−</button>
+        <div class="score-num">${scores[p]}</div>
+        <div class="plus-btn">+</div>
+      </div>
+    </div>
+  `).join("");
+}
+
+function endGame() {
+  if (!confirm("End the game early?")) return;
+  const leader = [...players].sort((a, b) => scores[b] - scores[a])[0];
+  showWinner(leader, true);
+}
+
+// ─── Win ───────────────────────────────────────────────────────────────────
+function showWinner(name, early = false) {
+  hide("gameScreen");
+  show("winScreen");
+
+  document.getElementById("winnerName").textContent = `${name} wins!`;
+  document.getElementById("winSub").textContent = early
+    ? `Game ended early — ${name} was in the lead.`
+    : `First to ${targetScore} points. Impressive.`;
+
+  const sorted = [...players].sort((a, b) => scores[b] - scores[a]);
+  document.getElementById("finalScores").innerHTML =
+    `<div style="font-size:0.75rem;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Final Scores</div>` +
+    sorted.map(p => `
+      <div class="final-score-row">
+        <span>${p}</span>
+        <span class="fscore">${scores[p]}</span>
+      </div>
+    `).join("");
+
+  launchConfetti();
+}
+
+function resetToSetup() {
+  players.forEach(p => scores[p] = 0);
+  roundCount = 0;
+  usedWords.clear();
+  hide("winScreen");
+  show("setupScreen");
+  renderPlayerList();
+}
+
+// ─── Confetti ──────────────────────────────────────────────────────────────
+function launchConfetti() {
+  const colors = ["#a78bfa","#818cf8","#fbbf24","#34d399","#f87171","#60a5fa"];
+  for (let i = 0; i < 80; i++) {
+    const el = document.createElement("div");
+    el.className = "confetti-piece";
+    el.style.left = Math.random() * 100 + "vw";
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.animationDuration = (1.5 + Math.random() * 2) + "s";
+    el.style.animationDelay = (Math.random() * 0.8) + "s";
+    el.style.width = (6 + Math.random() * 8) + "px";
+    el.style.height = (6 + Math.random() * 8) + "px";
+    document.body.appendChild(el);
+    el.addEventListener("animationend", () => el.remove());
+  }
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
+function show(id) { document.getElementById(id).classList.remove("hidden"); }
+function hide(id) { document.getElementById(id).classList.add("hidden"); }
+</script>
+</body>
+</html>
