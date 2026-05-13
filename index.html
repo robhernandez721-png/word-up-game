@@ -487,20 +487,20 @@
 // ─── Word lists by difficulty ──────────────────────────────────────────────
 const WORD_LISTS = {
   easy: [
-    "anger","brave","calm","chase","clean","clever","cold","cruel","curious",
-    "danger","dark","defeat","eager","fair","false","fame","fancy","fast",
-    "fierce","fond","foolish","force","gentle","glad","gloomy","greedy",
-    "grieve","harsh","honest","honor","hope","humble","ignore","jealous",
-    "joyful","judge","kind","lazy","loud","loyal","lucky","mean","moody",
-    "nervous","noisy","odd","patient","peaceful","polite","poor","proud",
-    "punish","quiet","reckless","rescue","reward","rude","safe","selfish",
-    "shame","shy","silly","sincere","smart","sneaky","sorry","stubborn",
-    "stupid","suffer","suspect","tender","thankful","timid","tired","trust",
-    "truthful","unfair","upset","vain","warn","weak","weird","wise","worried",
-    "wrong","brag","boast","coward","clumsy","annoy","forgive","taunt",
-    "wander","linger","gather","scold","startle","panic","dread","envy",
-    "mock","blurt","avoid","ignore","stare","mumble","shiver","frown",
-    "admire","argue","tease","trick","praise","rescue","bully","whisper"
+    "angry","brave","calm","clever","cruel","curious","defeat","eager",
+    "false","fierce","fond","foolish","gentle","glad","gloomy","greedy",
+    "grieve","harsh","honest","humble","jealous","joyful","kind","lazy",
+    "loyal","moody","nervous","patient","peaceful","polite","proud",
+    "reckless","rude","selfish","shy","silly","sincere","sneaky","stubborn",
+    "tender","thankful","timid","truthful","upset","vain","weak","weird",
+    "wise","worried","coward","clumsy","annoy","forgive","taunt","wander",
+    "linger","scold","startle","dread","envy","mock","mumble","shiver",
+    "frown","admire","argue","tease","praise","bully","whisper","boast",
+    "blunder","crafty","daring","fearless","frantic","gullible","helpless",
+    "ignorant","impulsive","innocent","insecure","jealous","judgemental",
+    "miserable","obedient","optimistic","pessimistic","rash","reliable",
+    "remorseful","resentful","restless","ruthless","sarcastic","sensitive",
+    "shameful","spiteful","suspicious","sympathetic","vengeful","virtuous"
   ],
 
   medium: [
@@ -665,23 +665,35 @@ async function loadWord() {
       const entry = data[0];
 
       // Search all meanings and definitions for the best one:
-      // must not contain the word (or its root), must be at least 20 chars
+      // must not contain the word (or its root), must be at least 20 chars.
+      // Prefer adjective > noun > adverb > verb to avoid archaic/obscure verb senses.
       const wordRoot = word.toLowerCase().replace(/(ing|ed|ly|tion|ness|ment|ful|less|er|est)$/, "");
+      const posOrder = ["adjective", "noun", "adverb", "verb"];
       let bestDef = null;
       let bestPos = null;
 
-      for (const meaning of entry.meanings) {
+      const isGoodDef = (def) => {
+        if (!def || def.length < 20) return false;
+        const low = def.toLowerCase();
+        if (low.includes(word.toLowerCase())) return false;
+        if (wordRoot.length > 3 && low.includes(wordRoot)) return false;
+        return true;
+      };
+
+      // Try preferred pos order first, then whatever's left
+      const allMeanings = entry.meanings;
+      const ordered = [
+        ...posOrder.map(pos => allMeanings.find(m => m.partOfSpeech === pos)).filter(Boolean),
+        ...allMeanings.filter(m => !posOrder.includes(m.partOfSpeech))
+      ];
+
+      for (const meaning of ordered) {
         for (const d of meaning.definitions) {
-          if (!d.definition) continue;
-          const defLower = d.definition.toLowerCase();
-          // Skip if definition gives away the word
-          if (defLower.includes(word.toLowerCase())) continue;
-          if (wordRoot.length > 3 && defLower.includes(wordRoot)) continue;
-          // Skip very short or stub definitions
-          if (d.definition.length < 20) continue;
-          bestDef = d.definition;
-          bestPos = meaning.partOfSpeech;
-          break;
+          if (isGoodDef(d.definition)) {
+            bestDef = d.definition;
+            bestPos = meaning.partOfSpeech;
+            break;
+          }
         }
         if (bestDef) break;
       }
