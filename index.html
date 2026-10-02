@@ -4,6 +4,14 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Word Up!</title>
+<meta name="description" content="Read the clue. Guess the word. Win. A pass-the-phone party word game." />
+<meta name="theme-color" content="#0f0f1a" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icons/icon-180.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Word Up" />
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -225,6 +233,10 @@
   }
 
   .word-reveal {
+    display: block;
+    width: 100%;
+    font: inherit;
+    color: inherit;
     text-align: center;
     padding: 16px;
     border-radius: 12px;
@@ -237,7 +249,7 @@
 
   .word-reveal:hover { border-color: #a78bfa; }
 
-  .word-reveal .tap-hint { color: #555; font-size: 0.85rem; }
+  .word-reveal .tap-hint { color: #8a8aa0; font-size: 0.85rem; }
 
   .hint-row {
     display: flex;
@@ -539,6 +551,12 @@
 
   .btn:disabled { opacity: 0.35; cursor: default; transform: none; }
 
+  :focus-visible { outline: 3px solid #fbbf24; outline-offset: 2px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+  }
+
   .hidden { display: none !important; }
 
   @media (max-width: 400px) {
@@ -566,7 +584,7 @@
   <div class="setup-card">
     <h2>Players</h2>
     <div class="input-row">
-      <input type="text" id="playerInput" placeholder="Enter player name" maxlength="20" />
+      <input type="text" id="playerInput" placeholder="Enter player name" maxlength="20" aria-label="Player name" autocomplete="off" />
       <button class="btn" onclick="addPlayer()">Add</button>
     </div>
     <div class="player-list" id="playerList"></div>
@@ -613,8 +631,8 @@
   <div class="setup-card">
     <h2>Win Condition</h2>
     <div class="score-config">
-      <label>First to</label>
-      <input type="number" id="targetScore" value="10" min="1" max="100" />
+      <label for="targetScore">First to</label>
+      <input type="number" id="targetScore" value="10" min="1" max="100" inputmode="numeric" />
       <label>points wins</label>
     </div>
   </div>
@@ -638,20 +656,20 @@
         <div class="pos-tag" id="posTag"></div>
         <div class="timer-pill hidden" id="timerPill"></div>
       </div>
-      <div class="definition-text" id="definitionText"></div>
+      <div class="definition-text" id="definitionText" aria-live="polite"></div>
     </div>
     <div class="timer-track hidden" id="timerTrack"><div class="timer-fill" id="timerFill"></div></div>
     <div class="hint-row">
       <div class="hint-pattern" id="hintPattern"></div>
       <button class="hint-btn" id="hintBtn" onclick="showHint()">Hint</button>
     </div>
-    <div class="word-reveal" id="wordReveal" onclick="toggleReveal()">
-      <div class="tap-hint" id="revealHint">Tap to reveal the word</div>
-      <div class="hidden" id="answerBox">
-        <div class="actual-word" id="actualWord"></div>
-        <div class="also-accept hidden" id="alsoAccept"></div>
-      </div>
-    </div>
+    <button type="button" class="word-reveal" id="wordReveal" onclick="toggleReveal()" aria-expanded="false">
+      <span class="tap-hint" id="revealHint">Tap to reveal the word</span>
+      <span class="hidden" id="answerBox">
+        <span class="actual-word" id="actualWord" style="display:block"></span>
+        <span class="also-accept hidden" id="alsoAccept" style="display:block"></span>
+      </span>
+    </button>
   </div>
 
   <div class="players-grid" id="playersGrid"></div>
@@ -667,7 +685,7 @@
 <div class="screen hidden" id="winScreen">
   <div class="win-screen">
     <div class="trophy">🏆</div>
-    <div class="win-name" id="winnerName"></div>
+    <div class="win-name" id="winnerName" role="status"></div>
     <div class="win-sub" id="winSub"></div>
     <div class="final-scores" id="finalScores"></div>
     <button class="btn btn-big" onclick="resetToSetup()">Play Again</button>
@@ -987,7 +1005,9 @@ function setRevealed(on) {
   wordRevealed = on;
   document.getElementById("revealHint").classList.toggle("hidden", on);
   document.getElementById("answerBox").classList.toggle("hidden", !on);
-  document.getElementById("wordReveal").style.borderColor = on ? "#a78bfa" : "";
+  const box = document.getElementById("wordReveal");
+  box.style.borderColor = on ? "#a78bfa" : "";
+  box.setAttribute("aria-expanded", String(on));
 }
 
 function toggleReveal() {
@@ -1151,13 +1171,25 @@ function renderScoreGrid() {
   grid.replaceChildren(...players.map(p => {
     const isReader = p === reader;
     const row = el("div", "player-score-row" + (isReader ? " is-reader" : ""));
-    if (!isReader) row.addEventListener("click", () => addPoint(p));
+    row.setAttribute("role", "button");
+    row.tabIndex = isReader ? -1 : 0;
+    row.setAttribute("aria-label", isReader
+      ? `${p}, ${scores[p]} points, reading this round`
+      : `Give ${p} a point (${scores[p]} now)`);
+    if (isReader) row.setAttribute("aria-disabled", "true");
+    else {
+      row.addEventListener("click", () => addPoint(p));
+      row.addEventListener("keydown", e => {
+        if (e.target === row && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); addPoint(p); }
+      });
+    }
 
     const nameCol = el("div", "player-name-col", p);
     if (top > 0 && scores[p] === top) nameCol.append(el("span", "leader-mark", "👑"));
     if (isReader) nameCol.append(el("span", "row-tag", "reading"));
 
     const minus = el("button", "minus-btn", "−");
+    minus.type = "button";
     minus.setAttribute("aria-label", `Take a point from ${p}`);
     minus.addEventListener("click", e => { e.stopPropagation(); removePoint(p); });
 
@@ -1200,7 +1232,7 @@ function showWinner(winners, early = false) {
 
   const box = document.getElementById("finalScores");
   const heading = el("div", "", "Final Scores");
-  heading.style.cssText = "font-size:0.75rem;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px";
+  heading.style.cssText = "font-size:0.75rem;color:#8a8aa0;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px";
   box.replaceChildren(heading, ...rankedPlayers().map(p => {
     const row = el("div", "final-score-row");
     row.append(el("span", "", p), el("span", "fscore", String(scores[p])));
@@ -1223,6 +1255,7 @@ function resetToSetup() {
 
 // ─── Confetti ──────────────────────────────────────────────────────────────
 function launchConfetti() {
+  if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const colors = ["#a78bfa","#818cf8","#fbbf24","#34d399","#f87171","#60a5fa"];
   for (let i = 0; i < 80; i++) {
     const el = document.createElement("div");
@@ -1245,6 +1278,11 @@ function hide(id) { document.getElementById(id).classList.add("hidden"); }
 // ─── Boot ──────────────────────────────────────────────────────────────────
 restoreSetup();
 showResumeOffer();
+
+// Offline + installable when served over http(s); opening the file directly still works.
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
 </script>
 </body>
 </html>

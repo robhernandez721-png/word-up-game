@@ -2,7 +2,9 @@
 
 A pass-the-phone party game: read the clue out loud, everyone races to guess the word, and the host taps whoever got it first. First to the target score wins.
 
-Open `index.html` in a browser to play. No install or internet connection needed.
+**Play:** https://robhernandez721-png.github.io/word-up-game/ (once GitHub Pages is switched on; see [Hosting](#hosting)). You can also just open `index.html` in a browser.
+
+**Put it on your phone:** open the link, then use **Share → Add to Home Screen** (iPhone) or **⋮ → Install app** (Android). It opens full-screen like an app and works offline after the first visit.
 
 ## How it plays
 
@@ -45,3 +47,20 @@ python3 scripts/word_frequency.py  # optional: how common each word is (pip inst
 `check-words.js` also runs automatically on every push and pull request.
 
 `word_frequency.py` scores each word on the Zipf scale using real modern English (subtitles, social media, news, web). Words below a level's floor are flagged for a human to decide on. Some well-known words score low because people rarely write them (*icicle*, *jaywalk*), and very new words may be missing entirely (*doomscrolling*).
+
+## Development
+
+```sh
+npm install                 # one time: installs the browser test runner
+npx playwright install chromium
+npm test                    # browser tests: setup, words, rounds, timer, scoring, resume, offline, layout
+npm run serve               # play locally at http://localhost:4173
+```
+
+CI runs the word check and the browser tests on every push and pull request.
+
+## Hosting
+
+Every push to `main` deploys the game to GitHub Pages (`.github/workflows/pages.yml`). It needs one-time setup in the repo: **Settings → Pages → Build and deployment → Source: GitHub Actions**. Until that's switched on, the deploy workflow fails, but nothing else is affected.
+
+After you change the game, players get the new version the second time they open it, because the first launch loads the copy saved for offline play. If you add or rename a file, add it to `FILES` in `sw.js` and bump `CACHE`.

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#0f0f1a"/>
+  <rect x="72" y="104" width="368" height="260" rx="56" fill="#1a1a2e" stroke="#a78bfa" stroke-width="14"/>
+  <path d="M176 360 L150 430 L236 360 Z" fill="#a78bfa"/>
+  <text x="236" y="296" text-anchor="middle" font-family="Segoe UI, DejaVu Sans, Arial, sans-serif" font-weight="800" font-size="190" fill="#a78bfa">W</text>
+  <text x="362" y="296" text-anchor="middle" font-family="Segoe UI, DejaVu Sans, Arial, sans-serif" font-weight="800" font-size="190" fill="#fbbf24">!</text>
+</svg>
