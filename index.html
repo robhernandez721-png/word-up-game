@@ -160,6 +160,7 @@
   .diff-btn.active-easy   { border-color: #34d399; color: #34d399; background: #34d39911; }
   .diff-btn.active-medium { border-color: #a78bfa; color: #a78bfa; background: #a78bfa11; }
   .diff-btn.active-hard   { border-color: #f87171; color: #f87171; background: #f8717111; }
+  .diff-btn.active-mix    { border-color: #fbbf24; color: #fbbf24; background: #fbbf2411; }
 
   .diff-label {
     display: block;
@@ -194,6 +195,7 @@
   .diff-indicator.easy   { background: #34d39922; color: #34d399; }
   .diff-indicator.medium { background: #a78bfa22; color: #a78bfa; }
   .diff-indicator.hard   { background: #f8717122; color: #f87171; }
+  .diff-indicator.mix    { background: #fbbf2422; color: #fbbf24; }
 
   .definition-card {
     background: #1a1a2e;
@@ -236,6 +238,42 @@
   .word-reveal:hover { border-color: #a78bfa; }
 
   .word-reveal .tap-hint { color: #555; font-size: 0.85rem; }
+
+  .hint-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 34px;
+  }
+
+  .hint-pattern {
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 1.05rem;
+    letter-spacing: 3px;
+    color: #fbbf24;
+  }
+
+  .hint-btn {
+    background: transparent;
+    color: #fbbf24;
+    border: 2px solid #fbbf2466;
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    flex: none;
+  }
+
+  .hint-btn:hover { background: #fbbf2411; }
+  .hint-btn:disabled { opacity: 0.35; cursor: default; }
+
+  .also-accept {
+    color: #888;
+    font-size: 0.8rem;
+    margin-top: 6px;
+  }
 
   .word-reveal .actual-word {
     font-size: 1.8rem;
@@ -420,15 +458,19 @@
     <div class="diff-row">
       <button class="diff-btn active-easy" id="diff-easy" onclick="setDifficulty('easy')">
         Easy
-        <span class="diff-label">Common words</span>
+        <span class="diff-label">Everyday stuff</span>
       </button>
       <button class="diff-btn" id="diff-medium" onclick="setDifficulty('medium')">
         Medium
-        <span class="diff-label">Makes you think</span>
+        <span class="diff-label">Modern life</span>
       </button>
       <button class="diff-btn" id="diff-hard" onclick="setDifficulty('hard')">
         Hard
-        <span class="diff-label">Vocabulary test</span>
+        <span class="diff-label">Big ideas</span>
+      </button>
+      <button class="diff-btn" id="diff-mix" onclick="setDifficulty('mix')">
+        Mix
+        <span class="diff-label">A bit of all</span>
       </button>
     </div>
   </div>
@@ -456,11 +498,18 @@
   <div class="definition-card">
     <div>
       <div class="pos-tag" id="posTag"></div>
-      <div class="definition-text" id="definitionText">Loading word...</div>
+      <div class="definition-text" id="definitionText"></div>
+    </div>
+    <div class="hint-row">
+      <div class="hint-pattern" id="hintPattern"></div>
+      <button class="hint-btn" id="hintBtn" onclick="showHint()">Hint</button>
     </div>
     <div class="word-reveal" id="wordReveal" onclick="toggleReveal()">
       <div class="tap-hint" id="revealHint">Tap to reveal the word</div>
-      <div class="actual-word hidden" id="actualWord"></div>
+      <div class="hidden" id="answerBox">
+        <div class="actual-word" id="actualWord"></div>
+        <div class="also-accept hidden" id="alsoAccept"></div>
+      </div>
     </div>
   </div>
 
@@ -483,87 +532,44 @@
   </div>
 </div>
 
+<script src="words.js"></script>
 <script>
-// ─── Word lists by difficulty ──────────────────────────────────────────────
-const WORD_LISTS = {
-  easy: [
-    "angry","brave","calm","clever","cruel","curious","defeat","eager",
-    "false","fierce","fond","foolish","gentle","glad","gloomy","greedy",
-    "grieve","harsh","honest","humble","jealous","joyful","kind","lazy",
-    "loyal","moody","nervous","patient","peaceful","polite","proud",
-    "reckless","rude","selfish","shy","silly","sincere","sneaky","stubborn",
-    "tender","thankful","timid","truthful","upset","vain","weak","weird",
-    "wise","worried","coward","clumsy","annoy","forgive","taunt","wander",
-    "linger","scold","startle","dread","envy","mock","mumble","shiver",
-    "frown","admire","argue","tease","praise","bully","whisper","boast",
-    "blunder","crafty","daring","fearless","frantic","gullible","helpless",
-    "ignorant","impulsive","innocent","insecure","jealous","judgemental",
-    "miserable","obedient","optimistic","pessimistic","rash","reliable",
-    "remorseful","resentful","restless","ruthless","sarcastic","sensitive",
-    "shameful","spiteful","suspicious","sympathetic","vengeful","virtuous"
-  ],
+// ─── Word bank (see words.js) ──────────────────────────────────────────────
+const LEVELS = ["easy", "medium", "hard"];
+const DIFF_LABELS = { easy: "Easy", medium: "Medium", hard: "Hard", mix: "Mix" };
+const SEEN_KEY = "wordup.seen.v1";
 
-  medium: [
-    "abhor","absurd","acumen","adroit","adversary","affable","aloof","ambiguous",
-    "amiable","appease","ardent","arduous","articulate","astute","atone",
-    "audacious","austere","avert","avid","banter","belittle","benevolent",
-    "bias","blatant","blunder","boisterous","brazen","brevity","candid",
-    "capricious","caustic","chronic","clamor","coerce","coherent","composure",
-    "concede","concise","condescend","confound","contempt","contrite","cunning",
-    "debacle","deceit","decipher","decisive","deduce","defiant","delude",
-    "demeanor","depict","desolate","devious","diligent","discern","discord",
-    "disdain","dispel","docile","dubious","eccentric","elaborate","eloquent",
-    "elusive","empower","enigma","erratic","evade","fathom","feign","fervent",
-    "fickle","flippant","flourish","foil","forfeit","formidable","furtive",
-    "futile","gloat","gratitude","grudge","guile","hamper","haughty","haven",
-    "hinder","hostile","impede","imposing","impulsive","inept","infamous",
-    "insolent","intrigue","jeopardize","lament","listless","loathe","lucid",
-    "lure","malice","meager","menace","meticulous","mischief","mitigate",
-    "mundane","nonchalant","obstinate","ominous","oppressive","pacify",
-    "pensive","perceive","persevere","plausible","ponder","pretense","prevail",
-    "provoke","prudent","pursue","reckless","relentless","reluctant","remorse",
-    "resilient","restrain","retaliate","revere","rigid","ruthless","sarcasm",
-    "scrutinize","shrewd","skeptical","slander","smug","solemn","somber",
-    "squander","steadfast","stoic","strive","subtle","sullen","tactful",
-    "tenacious","torment","trivial","turbulent","unyielding","vanquish",
-    "verbose","vigilant","vindictive","volatile","wary","wistful","zealous"
-  ],
+function poolFor(level) {
+  if (level === "mix") return LEVELS.flatMap(l => WORD_BANK[l]);
+  return WORD_BANK[level];
+}
 
-  hard: [
-    "abstemious","accolade","acrimony","adamant","admonish","alleviate",
-    "altercation","ambivalent","annihilate","antagonize","appall","apprehend",
-    "arbitrary","archaic","ardor","assiduous","atrocious","baffle","bamboozle",
-    "belabor","bemoan","berate","bolster","bravado","buffoon","cajole",
-    "callous","capitulate","captivate","charade","charlatan","chastise",
-    "circumvent","clandestine","clemency","colossal","combative","commend",
-    "complacent","conceit","confiscate","conspire","contemplate","contradict",
-    "contrition","convoluted","cordial","covert","culminate","cynical","daunt",
-    "decorum","defame","deflect","deliberate","denounce","deprive","deride",
-    "despondent","deter","devastate","devout","diminish","discreet","dismay",
-    "disobey","dominate","earnest","efface","egotistical","embellish","emulate",
-    "eradicate","escalate","esteem","evoke","exemplary","fabricate","falter",
-    "ferocious","fervor","fiend","flatter","flaunt","frugal","grapple",
-    "grovel","guise","harrowing","humiliate","hypocrite","idealize","implore",
-    "impudent","incite","indignant","indulge","infer","infuriate","instigate",
-    "intimidate","irate","jubilant","justify","kindle","knack","languid",
-    "latent","laudable","legitimate","lethargic","liable","lofty","looming",
-    "mangle","manipulate","meander","meddle","menial","misconduct","mislead",
-    "morose","muster","notorious","nullify","oblivious","obtuse","ostracize",
-    "outrage","overwhelm","persecute","pessimist","placate","pompous",
-    "presumptuous","probe","profane","prolong","quarrel","quench","rampage",
-    "rankle","ravage","rebuke","recant","recoil","redeem","refute","reinforce",
-    "renounce","repent","reprimand","resentment","revoke","rile","sabotage",
-    "scoff","scorn","seclude","seethe","sever","shun","sinister","spiteful",
-    "stagnate","stifle","strife","stupefy","subdue","suppress","swagger",
-    "swindle","terminate","thwart","transgress","treacherous","turmoil",
-    "undermine","unravel","usurp","valiant","vengeance","vex","vilify",
-    "vulnerable","waver","weary","wrath","yearn","abscess","acrimony",
-    "assail","banal","clamor","disputatious","fallacious","imperious",
-    "impetuous","incongruous","laconic","magnanimous","mendacious","obsequious",
-    "parsimonious","perfidious","precipitous","querulous","recalcitrant",
-    "sycophant","truculent","vociferous"
-  ]
-};
+// Words already shown, remembered across games (and reloads) so the same group
+// doesn't see repeats until they've been through the whole list.
+function loadSeen() {
+  try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY)) || []); }
+  catch { return new Set(); }
+}
+
+function saveSeen() {
+  try { localStorage.setItem(SEEN_KEY, JSON.stringify([...seenWords])); }
+  catch { /* storage unavailable — repeats just reset on reload */ }
+}
+
+function drawWord() {
+  const pool = poolFor(difficulty);
+  let fresh = pool.filter(e => !seenWords.has(e.word));
+  if (fresh.length === 0) {
+    // Everything in this pool has been played — start the cycle over,
+    // but never repeat the word that's on screen right now.
+    pool.forEach(e => seenWords.delete(e.word));
+    fresh = pool.filter(e => !current || e.word !== current.word);
+  }
+  const pick = fresh[Math.floor(Math.random() * fresh.length)];
+  seenWords.add(pick.word);
+  saveSeen();
+  return pick;
+}
 
 // ─── State ─────────────────────────────────────────────────────────────────
 let players = [];
@@ -572,13 +578,14 @@ let targetScore = 10;
 let difficulty = "easy";
 let roundCount = 0;
 let wordRevealed = false;
-let currentWord = "";
-let usedWords = new Set();
+let hintLevel = 0;
+let current = null;
+const seenWords = loadSeen();
 
 // ─── Difficulty selector ───────────────────────────────────────────────────
 function setDifficulty(level) {
   difficulty = level;
-  ["easy","medium","hard"].forEach(d => {
+  ["easy", "medium", "hard", "mix"].forEach(d => {
     const btn = document.getElementById("diff-" + d);
     btn.className = "diff-btn" + (d === level ? " active-" + d : "");
   });
@@ -591,9 +598,9 @@ document.getElementById("playerInput").addEventListener("keydown", e => {
 
 function addPlayer() {
   const input = document.getElementById("playerInput");
-  const name = input.value.trim();
+  const name = input.value.trim().replace(/\s+/g, " ");
   if (!name) return;
-  if (players.includes(name)) { input.value = ""; return; }
+  if (players.some(p => p.toLowerCase() === name.toLowerCase())) { input.value = ""; return; }
   players.push(name);
   scores[name] = 0;
   input.value = "";
@@ -606,14 +613,24 @@ function removePlayer(name) {
   renderPlayerList();
 }
 
+// Player names are user input: always render them with textContent and
+// look them up by index, never by splicing them into HTML or onclick strings.
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
 function renderPlayerList() {
   const list = document.getElementById("playerList");
-  list.innerHTML = players.map(p => `
-    <div class="player-chip">
-      <span>${p}</span>
-      <button class="btn btn-danger" onclick="removePlayer('${p}')">Remove</button>
-    </div>
-  `).join("");
+  list.replaceChildren(...players.map(p => {
+    const chip = el("div", "player-chip");
+    const btn = el("button", "btn btn-danger", "Remove");
+    btn.addEventListener("click", () => removePlayer(p));
+    chip.append(el("span", "", p), btn);
+    return chip;
+  }));
 }
 
 function startGame() {
@@ -621,109 +638,79 @@ function startGame() {
     alert("Add at least 2 players to start!");
     return;
   }
-  const t = parseInt(document.getElementById("targetScore").value);
+  const t = parseInt(document.getElementById("targetScore").value, 10);
   if (!t || t < 1) { alert("Set a valid winning score."); return; }
   targetScore = t;
   players.forEach(p => scores[p] = 0);
   roundCount = 0;
-  usedWords.clear();
+  current = null;
 
-  show("gameScreen");
   hide("setupScreen");
-
-  const badge = document.getElementById("roundBadge");
-  const diffLabel = { easy: "Easy", medium: "Medium", hard: "Hard" }[difficulty];
-  const diffClass = difficulty;
-  badge.innerHTML = `Round 1 <span class="diff-indicator ${diffClass}">${diffLabel}</span>`;
+  show("gameScreen");
 
   renderScoreGrid();
+  updateProgress();
   loadWord();
 }
 
 // ─── Game ──────────────────────────────────────────────────────────────────
-async function loadWord() {
+function loadWord() {
+  current = drawWord();
+  roundCount++;
   wordRevealed = false;
-  document.getElementById("revealHint").classList.remove("hidden");
-  document.getElementById("actualWord").classList.add("hidden");
-  document.getElementById("definitionText").textContent = "Loading...";
-  document.getElementById("posTag").textContent = "";
-  document.getElementById("wordReveal").style.borderColor = "";
+  hintLevel = 0;
 
-  const pool = WORD_LISTS[difficulty];
-  const available = pool.filter(w => !usedWords.has(w));
-  if (available.length === 0) usedWords.clear();
+  document.getElementById("posTag").textContent = current.pos;
+  document.getElementById("definitionText").textContent = current.clue;
+  document.getElementById("actualWord").textContent = current.word.toUpperCase();
 
-  const candidates = available.length > 0 ? available : pool;
-  let attempts = 0;
+  const also = document.getElementById("alsoAccept");
+  also.textContent = current.alt && current.alt.length ? "Also accept: " + current.alt.join(", ") : "";
+  also.classList.toggle("hidden", !also.textContent);
 
-  while (attempts < 15) {
-    const word = candidates[Math.floor(Math.random() * candidates.length)];
-    try {
-      const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
-      if (!res.ok) { attempts++; continue; }
-      const data = await res.json();
-      const entry = data[0];
+  document.getElementById("hintPattern").textContent = "";
+  document.getElementById("hintBtn").disabled = false;
+  document.getElementById("hintBtn").textContent = "Hint";
+  setRevealed(false);
 
-      // Search all meanings and definitions for the best one:
-      // must not contain the word (or its root), must be at least 20 chars.
-      // Prefer adjective > noun > adverb > verb to avoid archaic/obscure verb senses.
-      const wordRoot = word.toLowerCase().replace(/(ing|ed|ly|tion|ness|ment|ful|less|er|est)$/, "");
-      const posOrder = ["adjective", "noun", "adverb", "verb"];
-      let bestDef = null;
-      let bestPos = null;
+  const badge = document.getElementById("roundBadge");
+  badge.replaceChildren(
+    document.createTextNode(`Round ${roundCount} `),
+    el("span", "diff-indicator " + difficulty, DIFF_LABELS[difficulty])
+  );
+}
 
-      const isGoodDef = (def) => {
-        if (!def || def.length < 20) return false;
-        const low = def.toLowerCase();
-        if (low.includes(word.toLowerCase())) return false;
-        if (wordRoot.length > 3 && low.includes(wordRoot)) return false;
-        return true;
-      };
+// "procrastinate" -> hint 1: "_ _ _ _ …" (13 letters), hint 2: "P _ _ _ …"
+function hintPattern(word, revealFirst) {
+  let first = true;
+  return [...word.toUpperCase()].map(ch => {
+    if (!/[A-Z]/.test(ch)) return ch === " " ? "  " : ch;
+    if (first) { first = false; if (revealFirst) return ch; }
+    return "_";
+  }).join(" ");
+}
 
-      // Try preferred pos order first, then whatever's left
-      const allMeanings = entry.meanings;
-      const ordered = [
-        ...posOrder.map(pos => allMeanings.find(m => m.partOfSpeech === pos)).filter(Boolean),
-        ...allMeanings.filter(m => !posOrder.includes(m.partOfSpeech))
-      ];
+function showHint() {
+  if (!current || hintLevel >= 2) return;
+  hintLevel++;
+  const letters = current.word.replace(/[^a-z]/gi, "").length;
+  document.getElementById("hintPattern").textContent =
+    hintPattern(current.word, hintLevel >= 2) + (hintLevel === 1 ? `  (${letters})` : "");
+  const btn = document.getElementById("hintBtn");
+  btn.textContent = hintLevel === 1 ? "First letter" : "Hint";
+  btn.disabled = hintLevel >= 2;
+}
 
-      for (const meaning of ordered) {
-        for (const d of meaning.definitions) {
-          if (isGoodDef(d.definition)) {
-            bestDef = d.definition;
-            bestPos = meaning.partOfSpeech;
-            break;
-          }
-        }
-        if (bestDef) break;
-      }
-
-      if (!bestDef) { attempts++; continue; }
-
-      currentWord = entry.word;
-      usedWords.add(word);
-      document.getElementById("posTag").textContent = bestPos;
-      document.getElementById("definitionText").textContent = bestDef;
-      document.getElementById("actualWord").textContent = currentWord.toUpperCase();
-
-      roundCount++;
-      const diffLabel = { easy: "Easy", medium: "Medium", hard: "Hard" }[difficulty];
-      document.getElementById("roundBadge").innerHTML =
-        `Round ${roundCount} <span class="diff-indicator ${difficulty}">${diffLabel}</span>`;
-      return;
-    } catch {
-      attempts++;
-    }
-  }
-  document.getElementById("definitionText").textContent = "Couldn't load a word. Tap 'Next Word' to try again.";
+function setRevealed(on) {
+  wordRevealed = on;
+  document.getElementById("revealHint").classList.toggle("hidden", on);
+  document.getElementById("answerBox").classList.toggle("hidden", !on);
+  document.getElementById("wordReveal").style.borderColor = on ? "#a78bfa" : "";
 }
 
 function toggleReveal() {
-  if (!currentWord) return;
-  wordRevealed = !wordRevealed;
-  document.getElementById("revealHint").classList.toggle("hidden", wordRevealed);
-  document.getElementById("actualWord").classList.toggle("hidden", !wordRevealed);
-  document.getElementById("wordReveal").style.borderColor = wordRevealed ? "#a78bfa" : "";
+  if (!current) return;
+  setRevealed(!wordRevealed);
 }
 
 function nextWord() { loadWord(); }
@@ -732,7 +719,7 @@ function addPoint(name) {
   scores[name]++;
   renderScoreGrid();
   updateProgress();
-  if (scores[name] >= targetScore) showWinner(name);
+  if (scores[name] >= targetScore) showWinner([name]);
 }
 
 function removePoint(name) {
@@ -742,51 +729,65 @@ function removePoint(name) {
 }
 
 function updateProgress() {
-  const max = Math.max(...players.map(p => scores[p]));
+  const max = Math.max(0, ...players.map(p => scores[p]));
   const pct = Math.min((max / targetScore) * 100, 100);
   document.getElementById("progressBar").style.width = pct + "%";
 }
 
+function rankedPlayers() {
+  return [...players].sort((a, b) => scores[b] - scores[a]);
+}
+
 function renderScoreGrid() {
-  const sorted = [...players].sort((a, b) => scores[b] - scores[a]);
   const grid = document.getElementById("playersGrid");
-  grid.innerHTML = sorted.map(p => `
-    <div class="player-score-row" onclick="addPoint('${p}')">
-      <div class="player-name-col">${p}</div>
-      <div class="score-col">
-        <button class="minus-btn" onclick="event.stopPropagation(); removePoint('${p}')">−</button>
-        <div class="score-num">${scores[p]}</div>
-        <div class="plus-btn">+</div>
-      </div>
-    </div>
-  `).join("");
+  grid.replaceChildren(...rankedPlayers().map(p => {
+    const row = el("div", "player-score-row");
+    row.addEventListener("click", () => addPoint(p));
+
+    const minus = el("button", "minus-btn", "−");
+    minus.setAttribute("aria-label", `Take a point from ${p}`);
+    minus.addEventListener("click", e => { e.stopPropagation(); removePoint(p); });
+
+    const scoreCol = el("div", "score-col");
+    scoreCol.append(minus, el("div", "score-num", String(scores[p])), el("div", "plus-btn", "+"));
+    row.append(el("div", "player-name-col", p), scoreCol);
+    return row;
+  }));
 }
 
 function endGame() {
   if (!confirm("End the game early?")) return;
-  const leader = [...players].sort((a, b) => scores[b] - scores[a])[0];
-  showWinner(leader, true);
+  const top = Math.max(...players.map(p => scores[p]));
+  showWinner(players.filter(p => scores[p] === top), true);
 }
 
 // ─── Win ───────────────────────────────────────────────────────────────────
-function showWinner(name, early = false) {
+function joinNames(names) {
+  if (names.length <= 2) return names.join(" & ");
+  return names.slice(0, -1).join(", ") + " & " + names[names.length - 1];
+}
+
+function showWinner(winners, early = false) {
   hide("gameScreen");
   show("winScreen");
 
-  document.getElementById("winnerName").textContent = `${name} wins!`;
-  document.getElementById("winSub").textContent = early
-    ? `Game ended early — ${name} was in the lead.`
-    : `First to ${targetScore} points. Impressive.`;
+  const tie = winners.length > 1;
+  document.getElementById("winnerName").textContent =
+    tie ? `It's a tie!` : `${winners[0]} wins!`;
+  document.getElementById("winSub").textContent = tie
+    ? `${joinNames(winners)} finished level with ${scores[winners[0]]} point${scores[winners[0]] === 1 ? "" : "s"}.`
+    : early
+      ? `Game ended early — ${winners[0]} was in the lead.`
+      : `First to ${targetScore} points. Impressive.`;
 
-  const sorted = [...players].sort((a, b) => scores[b] - scores[a]);
-  document.getElementById("finalScores").innerHTML =
-    `<div style="font-size:0.75rem;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Final Scores</div>` +
-    sorted.map(p => `
-      <div class="final-score-row">
-        <span>${p}</span>
-        <span class="fscore">${scores[p]}</span>
-      </div>
-    `).join("");
+  const box = document.getElementById("finalScores");
+  const heading = el("div", "", "Final Scores");
+  heading.style.cssText = "font-size:0.75rem;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px";
+  box.replaceChildren(heading, ...rankedPlayers().map(p => {
+    const row = el("div", "final-score-row");
+    row.append(el("span", "", p), el("span", "fscore", String(scores[p])));
+    return row;
+  }));
 
   launchConfetti();
 }
@@ -794,7 +795,7 @@ function showWinner(name, early = false) {
 function resetToSetup() {
   players.forEach(p => scores[p] = 0);
   roundCount = 0;
-  usedWords.clear();
+  current = null;
   hide("winScreen");
   show("setupScreen");
   renderPlayerList();
