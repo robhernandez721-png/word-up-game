@@ -364,7 +364,7 @@
     gap: 10px;
   }
 
-  .action-row .btn { flex: 1; }
+  .action-row .btn { flex: 1; padding: 12px 8px; white-space: nowrap; }
 
   .progress-bar-wrap {
     background: #1a1a2e;
@@ -429,6 +429,116 @@
     to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
   }
 
+  /* SEGMENTED OPTIONS (reader mode, timer) */
+  .option-label {
+    color: #ccc;
+    font-size: 0.85rem;
+    margin: 4px 0 8px;
+  }
+
+  .option-label:not(:first-of-type) { margin-top: 16px; }
+
+  .seg-row { display: flex; gap: 8px; }
+
+  .seg-btn {
+    flex: 1;
+    padding: 9px 6px;
+    border-radius: 10px;
+    border: 2px solid #2d2d4e;
+    background: #0f0f1a;
+    color: #888;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .seg-btn:hover { border-color: #a78bfa55; color: #ccc; }
+  .seg-btn.active { border-color: #a78bfa; color: #a78bfa; background: #a78bfa11; }
+
+  /* RESUME BANNER */
+  .resume-card {
+    background: #1a1a2e;
+    border: 2px solid #fbbf2466;
+    border-radius: 16px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+
+  .resume-title { color: #fbbf24; font-weight: 800; margin-bottom: 4px; }
+  .resume-detail { color: #aaa; font-size: 0.9rem; margin-bottom: 14px; }
+  .resume-card .action-row .btn { padding: 10px; }
+
+  /* READER + TIMER */
+  .reader-banner {
+    text-align: center;
+    color: #ccc;
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+  }
+
+  .reader-banner strong { color: #a78bfa; }
+
+  .card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .card-top .pos-tag { margin-bottom: 0; }
+
+  .timer-pill {
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+    font-size: 0.85rem;
+    color: #a78bfa;
+    background: #a78bfa1a;
+    border-radius: 20px;
+    padding: 3px 10px;
+    transition: color 0.2s, background 0.2s;
+  }
+
+  .timer-pill.urgent { color: #f87171; background: #f871711f; }
+  .timer-pill.done { color: #888; background: #2d2d4e; }
+
+  .timer-track {
+    height: 4px;
+    background: #0f0f1a;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .timer-fill {
+    height: 100%;
+    width: 100%;
+    background: #a78bfa;
+    transition: width 0.25s linear, background 0.2s;
+  }
+
+  .timer-fill.urgent { background: #f87171; }
+
+  .player-score-row.is-reader {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .player-score-row.is-reader:hover,
+  .player-score-row.is-reader:active { border-color: transparent; transform: none; }
+
+  .row-tag {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+    margin-left: 8px;
+  }
+
+  .leader-mark { margin-left: 6px; }
+
+  .btn:disabled { opacity: 0.35; cursor: default; transform: none; }
+
   .hidden { display: none !important; }
 
   @media (max-width: 400px) {
@@ -444,6 +554,15 @@
 
 <!-- SETUP SCREEN -->
 <div class="screen" id="setupScreen">
+  <div class="resume-card hidden" id="resumeCard">
+    <div class="resume-title">Game in progress</div>
+    <div class="resume-detail" id="resumeDetail"></div>
+    <div class="action-row">
+      <button class="btn" onclick="resumeGame()">Resume</button>
+      <button class="btn btn-outline" onclick="discardSavedGame()">Start over</button>
+    </div>
+  </div>
+
   <div class="setup-card">
     <h2>Players</h2>
     <div class="input-row">
@@ -476,6 +595,22 @@
   </div>
 
   <div class="setup-card">
+    <h2>Rounds</h2>
+    <div class="option-label">Who reads the clue?</div>
+    <div class="seg-row">
+      <button class="seg-btn active" data-reader="turns" onclick="setReaderMode('turns')">Take turns</button>
+      <button class="seg-btn" data-reader="host" onclick="setReaderMode('host')">One host</button>
+    </div>
+    <div class="option-label">Timer per word</div>
+    <div class="seg-row">
+      <button class="seg-btn active" data-timer="0" onclick="setTimer(0)">Off</button>
+      <button class="seg-btn" data-timer="30" onclick="setTimer(30)">30s</button>
+      <button class="seg-btn" data-timer="45" onclick="setTimer(45)">45s</button>
+      <button class="seg-btn" data-timer="60" onclick="setTimer(60)">60s</button>
+    </div>
+  </div>
+
+  <div class="setup-card">
     <h2>Win Condition</h2>
     <div class="score-config">
       <label>First to</label>
@@ -495,11 +630,17 @@
     <div class="progress-bar" id="progressBar" style="width:0%"></div>
   </div>
 
+  <div class="reader-banner hidden" id="readerBanner"></div>
+
   <div class="definition-card">
     <div>
-      <div class="pos-tag" id="posTag"></div>
+      <div class="card-top">
+        <div class="pos-tag" id="posTag"></div>
+        <div class="timer-pill hidden" id="timerPill"></div>
+      </div>
       <div class="definition-text" id="definitionText"></div>
     </div>
+    <div class="timer-track hidden" id="timerTrack"><div class="timer-fill" id="timerFill"></div></div>
     <div class="hint-row">
       <div class="hint-pattern" id="hintPattern"></div>
       <button class="hint-btn" id="hintBtn" onclick="showHint()">Hint</button>
@@ -517,6 +658,7 @@
 
   <div class="action-row">
     <button class="btn btn-outline" onclick="nextWord()">Next Word</button>
+    <button class="btn btn-outline" id="undoBtn" onclick="undoLast()" disabled>Undo</button>
     <button class="btn btn-danger btn-outline" onclick="endGame()">End Game</button>
   </div>
 </div>
@@ -572,29 +714,89 @@ function drawWord() {
 }
 
 // ─── State ─────────────────────────────────────────────────────────────────
+const SETUP_KEY = "wordup.setup.v1";
+const GAME_KEY = "wordup.game.v1";
+
 let players = [];
 let scores = {};
 let targetScore = 10;
 let difficulty = "easy";
+let readerMode = "turns";   // "turns": players take turns reading; "host": a non-player reads
+let timerSeconds = 0;       // 0 = no timer
 let roundCount = 0;
+let readerIdx = -1;
 let wordRevealed = false;
 let hintLevel = 0;
 let current = null;
+let scoreLog = [];          // [{ name, delta }] for Undo
 const seenWords = loadSeen();
 
-// ─── Difficulty selector ───────────────────────────────────────────────────
+function store(key, value) {
+  try {
+    if (value === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, JSON.stringify(value));
+  } catch { /* storage unavailable — game still works, just isn't saved */ }
+}
+
+function fetchStored(key) {
+  try { return JSON.parse(localStorage.getItem(key)); }
+  catch { return null; }
+}
+
+// ─── Setup options ─────────────────────────────────────────────────────────
 function setDifficulty(level) {
   difficulty = level;
   ["easy", "medium", "hard", "mix"].forEach(d => {
     const btn = document.getElementById("diff-" + d);
     btn.className = "diff-btn" + (d === level ? " active-" + d : "");
   });
+  saveSetup();
 }
 
-// ─── Setup ─────────────────────────────────────────────────────────────────
+function setReaderMode(mode) {
+  readerMode = mode;
+  document.querySelectorAll("[data-reader]").forEach(b => b.classList.toggle("active", b.dataset.reader === mode));
+  saveSetup();
+}
+
+function setTimer(seconds) {
+  timerSeconds = seconds;
+  document.querySelectorAll("[data-timer]").forEach(b => b.classList.toggle("active", Number(b.dataset.timer) === seconds));
+  saveSetup();
+}
+
+// The last group and settings are remembered so game night #2 is one tap.
+function saveSetup() {
+  if (restoring) return;
+  store(SETUP_KEY, {
+    players, difficulty, readerMode, timerSeconds,
+    targetScore: parseInt(document.getElementById("targetScore").value, 10) || 10
+  });
+}
+
+let restoring = false;
+
+function restoreSetup() {
+  const saved = fetchStored(SETUP_KEY);
+  if (!saved) return;
+  restoring = true;
+  if (Array.isArray(saved.players)) {
+    players = saved.players.filter(p => typeof p === "string").slice(0, 20);
+    players.forEach(p => scores[p] = 0);
+  }
+  if (DIFF_LABELS[saved.difficulty]) setDifficulty(saved.difficulty);
+  if (saved.readerMode === "turns" || saved.readerMode === "host") setReaderMode(saved.readerMode);
+  if ([0, 30, 45, 60].includes(saved.timerSeconds)) setTimer(saved.timerSeconds);
+  if (saved.targetScore > 0) document.getElementById("targetScore").value = saved.targetScore;
+  restoring = false;
+  renderPlayerList();
+}
+
+// ─── Players ───────────────────────────────────────────────────────────────
 document.getElementById("playerInput").addEventListener("keydown", e => {
   if (e.key === "Enter") addPlayer();
 });
+document.getElementById("targetScore").addEventListener("change", saveSetup);
 
 function addPlayer() {
   const input = document.getElementById("playerInput");
@@ -605,16 +807,18 @@ function addPlayer() {
   scores[name] = 0;
   input.value = "";
   renderPlayerList();
+  saveSetup();
 }
 
 function removePlayer(name) {
   players = players.filter(p => p !== name);
   delete scores[name];
   renderPlayerList();
+  saveSetup();
 }
 
-// Player names are user input: always render them with textContent and
-// look them up by index, never by splicing them into HTML or onclick strings.
+// Player names are user input: always render them with textContent,
+// never by splicing them into HTML or onclick strings.
 function el(tag, className, text) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -633,6 +837,7 @@ function renderPlayerList() {
   }));
 }
 
+// ─── Start / resume ────────────────────────────────────────────────────────
 function startGame() {
   if (players.length < 2) {
     alert("Add at least 2 players to start!");
@@ -641,22 +846,89 @@ function startGame() {
   const t = parseInt(document.getElementById("targetScore").value, 10);
   if (!t || t < 1) { alert("Set a valid winning score."); return; }
   targetScore = t;
+  saveSetup();
+
   players.forEach(p => scores[p] = 0);
   roundCount = 0;
+  readerIdx = readerMode === "turns" ? Math.floor(Math.random() * players.length) - 1 : -1;
+  scoreLog = [];
   current = null;
 
-  hide("setupScreen");
-  show("gameScreen");
-
-  renderScoreGrid();
-  updateProgress();
+  enterGameScreen();
   loadWord();
 }
 
-// ─── Game ──────────────────────────────────────────────────────────────────
+function enterGameScreen() {
+  hide("setupScreen");
+  hide("winScreen");
+  show("gameScreen");
+  unlockAudio();
+  keepScreenAwake();
+  renderScoreGrid();
+  updateProgress();
+  updateUndo();
+}
+
+function savedGame() {
+  const g = fetchStored(GAME_KEY);
+  if (!g || !Array.isArray(g.players) || g.players.length < 2 || !g.word) return null;
+  const entry = LEVELS.flatMap(l => WORD_BANK[l]).find(e => e.word === g.word);
+  return entry ? { ...g, entry } : null;
+}
+
+function showResumeOffer() {
+  const g = savedGame();
+  if (!g) { hide("resumeCard"); return; }
+  const ranked = [...g.players].sort((a, b) => (g.scores[b] || 0) - (g.scores[a] || 0));
+  document.getElementById("resumeDetail").textContent =
+    `Round ${g.roundCount} · ${ranked.map(p => `${p} ${g.scores[p] || 0}`).join(", ")} · first to ${g.targetScore}`;
+  show("resumeCard");
+}
+
+function resumeGame() {
+  const g = savedGame();
+  if (!g) { hide("resumeCard"); return; }
+  players = g.players;
+  scores = {};
+  players.forEach(p => scores[p] = Number(g.scores[p]) || 0);
+  targetScore = g.targetScore;
+  difficulty = DIFF_LABELS[g.difficulty] ? g.difficulty : "easy";
+  readerMode = g.readerMode === "host" ? "host" : "turns";
+  timerSeconds = [0, 30, 45, 60].includes(g.timerSeconds) ? g.timerSeconds : 0;
+  roundCount = g.roundCount;
+  readerIdx = g.readerIdx;
+  scoreLog = Array.isArray(g.scoreLog) ? g.scoreLog : [];
+
+  enterGameScreen();
+  showWord(g.entry);
+}
+
+function discardSavedGame() {
+  store(GAME_KEY, null);
+  hide("resumeCard");
+}
+
+function saveGame() {
+  if (!current) return;
+  store(GAME_KEY, {
+    players, scores, targetScore, difficulty, readerMode, timerSeconds,
+    roundCount, readerIdx, scoreLog: scoreLog.slice(-50), word: current.word
+  });
+}
+
+// ─── Rounds ────────────────────────────────────────────────────────────────
+function currentReader() {
+  return readerMode === "turns" && readerIdx >= 0 ? players[readerIdx % players.length] : null;
+}
+
 function loadWord() {
-  current = drawWord();
   roundCount++;
+  if (readerMode === "turns") readerIdx = (readerIdx + 1) % players.length;
+  showWord(drawWord());
+}
+
+function showWord(entry) {
+  current = entry;
   wordRevealed = false;
   hintLevel = 0;
 
@@ -673,12 +945,22 @@ function loadWord() {
   document.getElementById("hintBtn").textContent = "Hint";
   setRevealed(false);
 
-  const badge = document.getElementById("roundBadge");
-  badge.replaceChildren(
+  document.getElementById("roundBadge").replaceChildren(
     document.createTextNode(`Round ${roundCount} `),
     el("span", "diff-indicator " + difficulty, DIFF_LABELS[difficulty])
   );
+
+  const reader = currentReader();
+  const banner = document.getElementById("readerBanner");
+  banner.classList.toggle("hidden", !reader);
+  if (reader) banner.replaceChildren(el("strong", "", reader), document.createTextNode(" reads this one — everyone else guesses"));
+
+  renderScoreGrid();
+  startTimer();
+  saveGame();
 }
+
+function nextWord() { loadWord(); }
 
 // "procrastinate" -> hint 1: "_ _ _ _ …" (13 letters), hint 2: "P _ _ _ …"
 function hintPattern(word, revealFirst) {
@@ -713,19 +995,141 @@ function toggleReveal() {
   setRevealed(!wordRevealed);
 }
 
-function nextWord() { loadWord(); }
+// ─── Timer ─────────────────────────────────────────────────────────────────
+let timerInterval = null;
+let timerDeadline = 0;
+let lastBeepSecond = null;
 
+function startTimer() {
+  stopTimer();
+  const on = timerSeconds > 0;
+  document.getElementById("timerPill").classList.toggle("hidden", !on);
+  document.getElementById("timerTrack").classList.toggle("hidden", !on);
+  if (!on) return;
+  timerDeadline = Date.now() + timerSeconds * 1000;
+  lastBeepSecond = null;
+  tickTimer();
+  timerInterval = setInterval(tickTimer, 200);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+}
+
+function tickTimer() {
+  const msLeft = Math.max(0, timerDeadline - Date.now());
+  const secs = Math.ceil(msLeft / 1000);
+  const urgent = secs <= 5;
+  const pill = document.getElementById("timerPill");
+  const fill = document.getElementById("timerFill");
+  pill.textContent = `0:${String(secs).padStart(2, "0")}`;
+  pill.className = "timer-pill" + (urgent ? " urgent" : "");
+  fill.style.width = (msLeft / (timerSeconds * 1000)) * 100 + "%";
+  fill.classList.toggle("urgent", urgent);
+
+  if (urgent && secs > 0 && secs !== lastBeepSecond) {
+    lastBeepSecond = secs;
+    beep(880, 0.08);
+  }
+  if (msLeft === 0) {
+    stopTimer();
+    pill.textContent = "Time's up";
+    pill.className = "timer-pill done";
+    beep(330, 0.45);
+    setRevealed(true);
+  }
+}
+
+// Freeze the clock where it is (someone got it) without showing "time's up".
+function freezeTimer() {
+  if (!timerInterval) return;
+  stopTimer();
+  document.getElementById("timerPill").className = "timer-pill done";
+}
+
+// ─── Sound + screen wake ───────────────────────────────────────────────────
+let audioCtx = null;
+
+// Browsers only allow audio after a tap, so this runs from Start/Resume.
+function unlockAudio() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+  } catch { audioCtx = null; }
+}
+
+function beep(freq, duration) {
+  if (!audioCtx) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+  } catch { /* no sound is fine */ }
+}
+
+let wakeLock = null;
+
+// Stop the phone from dimming and locking mid-round.
+async function keepScreenAwake() {
+  try {
+    if ("wakeLock" in navigator && !wakeLock) {
+      wakeLock = await navigator.wakeLock.request("screen");
+      wakeLock.addEventListener("release", () => { wakeLock = null; });
+    }
+  } catch { /* not supported or denied */ }
+}
+
+function releaseScreen() {
+  if (wakeLock) wakeLock.release().catch(() => {});
+  wakeLock = null;
+}
+
+document.addEventListener("visibilitychange", () => {
+  const playing = !document.getElementById("gameScreen").classList.contains("hidden");
+  if (document.visibilityState === "visible" && playing) keepScreenAwake();
+});
+
+// ─── Scoring ───────────────────────────────────────────────────────────────
 function addPoint(name) {
+  if (name === currentReader()) return;
   scores[name]++;
-  renderScoreGrid();
-  updateProgress();
+  scoreLog.push({ name, delta: 1 });
+  // Someone got it: stop the clock and show everyone the answer.
+  freezeTimer();
+  setRevealed(true);
+  afterScoreChange();
   if (scores[name] >= targetScore) showWinner([name]);
 }
 
 function removePoint(name) {
-  if (scores[name] > 0) scores[name]--;
+  if (scores[name] <= 0) return;
+  scores[name]--;
+  scoreLog.push({ name, delta: -1 });
+  afterScoreChange();
+}
+
+function undoLast() {
+  const last = scoreLog.pop();
+  if (!last || !(last.name in scores)) return;
+  scores[last.name] = Math.max(0, scores[last.name] - last.delta);
+  afterScoreChange();
+}
+
+function afterScoreChange() {
   renderScoreGrid();
   updateProgress();
+  updateUndo();
+  saveGame();
+}
+
+function updateUndo() {
+  document.getElementById("undoBtn").disabled = scoreLog.length === 0;
 }
 
 function updateProgress() {
@@ -738,19 +1142,29 @@ function rankedPlayers() {
   return [...players].sort((a, b) => scores[b] - scores[a]);
 }
 
+// Rows stay in join order during play (re-sorting after every point made
+// people tap the wrong row); the leader gets a crown instead.
 function renderScoreGrid() {
+  const top = Math.max(0, ...players.map(p => scores[p]));
+  const reader = currentReader();
   const grid = document.getElementById("playersGrid");
-  grid.replaceChildren(...rankedPlayers().map(p => {
-    const row = el("div", "player-score-row");
-    row.addEventListener("click", () => addPoint(p));
+  grid.replaceChildren(...players.map(p => {
+    const isReader = p === reader;
+    const row = el("div", "player-score-row" + (isReader ? " is-reader" : ""));
+    if (!isReader) row.addEventListener("click", () => addPoint(p));
+
+    const nameCol = el("div", "player-name-col", p);
+    if (top > 0 && scores[p] === top) nameCol.append(el("span", "leader-mark", "👑"));
+    if (isReader) nameCol.append(el("span", "row-tag", "reading"));
 
     const minus = el("button", "minus-btn", "−");
     minus.setAttribute("aria-label", `Take a point from ${p}`);
     minus.addEventListener("click", e => { e.stopPropagation(); removePoint(p); });
 
     const scoreCol = el("div", "score-col");
-    scoreCol.append(minus, el("div", "score-num", String(scores[p])), el("div", "plus-btn", "+"));
-    row.append(el("div", "player-name-col", p), scoreCol);
+    scoreCol.append(minus, el("div", "score-num", String(scores[p])));
+    if (!isReader) scoreCol.append(el("div", "plus-btn", "+"));
+    row.append(nameCol, scoreCol);
     return row;
   }));
 }
@@ -768,14 +1182,18 @@ function joinNames(names) {
 }
 
 function showWinner(winners, early = false) {
+  stopTimer();
+  releaseScreen();
+  store(GAME_KEY, null);
   hide("gameScreen");
   show("winScreen");
 
   const tie = winners.length > 1;
+  const pts = scores[winners[0]];
   document.getElementById("winnerName").textContent =
     tie ? `It's a tie!` : `${winners[0]} wins!`;
   document.getElementById("winSub").textContent = tie
-    ? `${joinNames(winners)} finished level with ${scores[winners[0]]} point${scores[winners[0]] === 1 ? "" : "s"}.`
+    ? `${joinNames(winners)} finished level with ${pts} point${pts === 1 ? "" : "s"}.`
     : early
       ? `Game ended early — ${winners[0]} was in the lead.`
       : `First to ${targetScore} points. Impressive.`;
@@ -796,9 +1214,11 @@ function resetToSetup() {
   players.forEach(p => scores[p] = 0);
   roundCount = 0;
   current = null;
+  scoreLog = [];
   hide("winScreen");
   show("setupScreen");
   renderPlayerList();
+  showResumeOffer();
 }
 
 // ─── Confetti ──────────────────────────────────────────────────────────────
@@ -821,6 +1241,10 @@ function launchConfetti() {
 // ─── Helpers ───────────────────────────────────────────────────────────────
 function show(id) { document.getElementById(id).classList.remove("hidden"); }
 function hide(id) { document.getElementById(id).classList.add("hidden"); }
+
+// ─── Boot ──────────────────────────────────────────────────────────────────
+restoreSetup();
+showResumeOffer();
 </script>
 </body>
 </html>

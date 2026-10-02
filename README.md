@@ -12,7 +12,12 @@ Open `index.html` in a browser to play. No install or internet connection needed
 - **Mix:** a bit of everything
 - **Hint:** first tap shows the letter count, second tap shows the first letter
 - **Reveal:** shows the answer plus any "also accept" answers
+- **Take turns reading:** each word, a different player reads the clue and sits out guessing. Or pick **One host** if someone just wants to run the game.
+- **Timer (optional):** 30, 45, or 60 seconds per word, with warning beeps for the last five seconds and an automatic reveal when time runs out
+- **Scoring:** tap a player to give them the point; the answer shows automatically. **Undo** reverses a mis-tap.
 - Words don't repeat until you've played the whole list, even across games on the same device
+- Your group and settings are remembered, and a game in progress survives closing the page; you'll be offered **Resume** next time
+- The screen stays awake during a game on phones that support it
 
 ## Adding or editing words
 
