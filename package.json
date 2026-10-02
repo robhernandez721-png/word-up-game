@@ -1,0 +1,13 @@
+{
+  "name": "word-up-game",
+  "private": true,
+  "description": "Word Up! pass-the-phone party word game",
+  "scripts": {
+    "test": "playwright test",
+    "check-words": "node scripts/check-words.js",
+    "serve": "node tests/serve.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  }
+}
