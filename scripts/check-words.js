@@ -88,7 +88,10 @@ for (const level of LEVELS) {
 
 // Near-duplicates: one answer built on another ("procrastinate" / "procrastination").
 // Pairs that only look related are allowlisted.
-const ALLOW_PAIRS = new Set(["referee|referendum", "inflation|influencer", "heir|heirloom"]);
+const ALLOW_PAIRS = new Set([
+  "referee|referendum", "inflation|influencer", "heir|heirloom", "inflammation|inflation",
+  "prom|promotion", "dorm|dormant", "entree|entrepreneur"
+]);
 const allWords = [...seen.keys()];
 const reported = new Set();
 for (const a of allWords) {

@@ -2,7 +2,7 @@
 
 A pass-the-phone party game: read the clue out loud, everyone races to guess the word, and the host taps whoever got it first. First to the target score wins.
 
-**Play:** https://robhernandez721-png.github.io/word-up-game/ (once GitHub Pages is switched on; see [Hosting](#hosting)). You can also just open `index.html` in a browser.
+**Play:** https://robhernandez721-png.github.io/word-up-game/ — or just open `index.html` in a browser.
 
 **Put it on your phone:** open the link, then use **Share → Add to Home Screen** (iPhone) or **⋮ → Install app** (Android). It opens full-screen like an app and works offline after the first visit.
 
@@ -10,7 +10,7 @@ A pass-the-phone party game: read the clue out loud, everyone races to guess the
 
 - **Easy:** everyday stuff (umbrella, sneeze, penguin)
 - **Medium:** modern life (deadline, spoiler, layover)
-- **Hard:** big ideas everyone knows but rarely says (irony, loophole, nepotism)
+- **Hard:** 600+ words everyone knows but rarely says (irony, loophole, nepotism, schadenfreude)
 - **Mix:** a bit of everything
 - **Hint:** first tap shows the letter count, second tap shows the first letter
 - **Reveal:** shows the answer plus any "also accept" answers
@@ -61,6 +61,6 @@ CI runs the word check and the browser tests on every push and pull request.
 
 ## Hosting
 
-Every push to `main` deploys the game to GitHub Pages (`.github/workflows/pages.yml`). It needs one-time setup in the repo: **Settings → Pages → Build and deployment → Source: GitHub Actions**. Until that's switched on, the deploy workflow fails, but nothing else is affected.
+Every push to `main` publishes the game to GitHub Pages automatically.
 
 After you change the game, players get the new version the second time they open it, because the first launch loads the copy saved for offline play. If you add or rename a file, add it to `FILES` in `sw.js` and bump `CACHE`.
